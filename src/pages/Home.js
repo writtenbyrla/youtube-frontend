@@ -11,7 +11,8 @@ import {
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import { faFolder } from "@fortawesome/free-regular-svg-icons";
 import { useEffect, useState } from "react";
-import { getCategories } from "../api/video"; // video.js에서 export로 내보낸건 {}로 import함
+import { getCategories } from "../api/video";
+// video.js에서 export로 내보낸건 {}로 import함
 
 // css
 const StyledAside = styled.aside`

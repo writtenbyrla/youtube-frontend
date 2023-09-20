@@ -3,11 +3,14 @@ import Home from "./pages/Home";
 import Watch from "./pages/Watch";
 import Layout from "./components/Layout";
 import NotFound from "./pages/NotFound";
+import Create from "./pages/Create";
+
 const router = createBrowserRouter([
   {
     path: "/",
     // element: <Home/>,
     element: <Layout />,
+    errorElement: <NotFound />,
     children: [
       {
         index: true,
@@ -18,10 +21,12 @@ const router = createBrowserRouter([
         path: "watch",
         element: <Watch />,
       },
-      {
-        errorElement: <NotFound />,
-      },
     ],
+  },
+  {
+    // 하위 페이지가 아닌 별도 페이지 빼고 싶을때 밖에서 지정
+    path: "/create",
+    element: <Create />,
   },
 ]);
 
