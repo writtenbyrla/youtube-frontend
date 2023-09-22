@@ -13,6 +13,8 @@ import { faFolder } from "@fortawesome/free-regular-svg-icons";
 import { useEffect, useState } from "react";
 import { getCategories } from "../api/video";
 // video.js에서 export로 내보낸건 {}로 import함
+import { getVideos } from "../api/video";
+import { useInView } from "react-intersection-observer";
 
 // css
 const StyledAside = styled.aside`
@@ -227,10 +229,48 @@ const StyledMain = styled.main`
 
 const Home = () => {
   const [categories, setCategories] = useState([]);
+  const [videos, setVideos] = useState([]);
+
+  // page 스크롤 무한처리
+  const [page, setPage] = useState(1);
+  const [ref, inView] = useInView();
+
+  //카테고리 값 받아서 url에 출력되게 하려는 변수
+  // http://localhost:8080/api/video?page=1&category=1
+  // 카테고리 코드 받으려고
+  const [category, setCategory] = useState(null);
 
   const categoryAPI = async () => {
     const result = await getCategories();
     setCategories(result.data);
+  };
+
+  const videoAPI = async () => {
+    const result = await getVideos(page, category);
+    //setVideos(result.data);
+
+    // 비디오 계속 나오게 무한처리
+    setVideos([...videos, ...result.data]);
+
+    console.log(result.data);
+  };
+
+  const categoryFilterAPI = async () => {
+    const result = await getVideos(page, category);
+    setVideos(result.data);
+  };
+
+  //카테고리 클릭 했을 때 메서드
+  const filterCategory = (e) => {
+    e.preventDefault();
+    //http://localhost:3000/1
+    //쪼개서 마지막 카테고리 코드만 값 추출되게 해야함
+    console.log(e.target.href);
+    const href = e.target.href.split("/");
+    console.log(href[href.length - 1]);
+
+    setCategory(parseInt(href[href.length - 1]));
+    setPage(1);
   };
 
   // 아래 코드 video.js로 따로 뺌(api 관련 관리하는 파일 따로 지정)
@@ -243,7 +283,6 @@ const Home = () => {
 
   useEffect(() => {
     categoryAPI();
-
     //   fetch("http://localhost:8080/api/category")
     //     .then((response) => response.json())
     //     .then((json) => {
@@ -255,6 +294,23 @@ const Home = () => {
     //   //console.log(json);
     //   // 배열 방식으로 받아와짐, 배열 담기 위해서 useState 필요
   }, []);
+
+  // useEffect(() => {
+  //   videoAPI();
+  // }, []);
+
+  useEffect(() => {
+    if (inView) {
+      console.log(`${inView} : 무한 스크롤 요청이 들어가야 하는 부분`);
+      videoAPI();
+      setPage(page + 1);
+    }
+  }, [inView]);
+
+  useEffect(() => {
+    console.log(category);
+    categoryFilterAPI();
+  }, [category]);
 
   return (
     <StyledMain>
@@ -309,7 +365,11 @@ const Home = () => {
           </a>
           {/* 콜백함수 map으로 위에서 배열형태로 담은 categories를 뿌림 */}
           {categories.map((category) => (
-            <a href="#" key={category.categoryCode}>
+            <a
+              href={category.categoryCode}
+              onClick={filterCategory}
+              key={category.categoryCode}
+            >
               {category.categoryName}
             </a>
           ))}
@@ -318,7 +378,41 @@ const Home = () => {
           {/* <a href="#">음악</a> */}
         </nav>
 
+        {/* 
+          파일 절대 경로의 경우 Not allowed to load local resource: 에러뜸 
+          public 폴더로 접근하면 가능
+        */}
         <section>
+          {videos.map((video) => (
+            <a href="#" className="video-content" key={video.videoCode}>
+              <video
+                poster={"/upload/" + video.videoPhoto}
+                width="100%"
+                autoPlay
+                loop
+                controls
+              >
+                <source src={"/upload/" + video.videoUrl} type="video/mp4" />
+              </video>
+              <div className="video-summary">
+                <img
+                  src={"/upload/" + video.channel.channelPhoto}
+                  alt="채널이미지"
+                />
+                <div className="video-desc">
+                  <h3>{video.videoTitle}</h3>
+                  <p>{video.channel.channelName}</p>
+                  <p>
+                    조회수
+                    <span> {video.videoViews}</span>
+                    회ㆍ
+                    <span>1일</span>전
+                  </p>
+                </div>
+              </div>
+            </a>
+          ))}
+
           {/* <a href="#" className="video-content">
             <video poster="./resources/thumbnail.jpg" width="100%" autoplay loop controls>
                 <source src="./resources/video.mp4" type="video/mp4" />
@@ -403,6 +497,7 @@ const Home = () => {
               </div>
             </div>
         </a> */}
+          <div ref={ref}></div>
         </section>
       </MainContent>
     </StyledMain>
